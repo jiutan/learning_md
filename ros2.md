@@ -52,9 +52,10 @@
     printenv                // 查看Linux下 所有的环境列表
 
 ```
-#### printenv 与 grep: 打印查找的内容
+#### printenv 与 grep: 打印环境变量 中查找的内容
+**printenv 是打印环境变量内的信息**
 ```c
-    printenv | grep <需要查找的内容部分>		// 打印出 含查找部分的 内容
+    printenv | grep <需要查找的内容部分>		// 打印出环境变量 含查找部分的 内容
 ```
 ### 2.找出文件【export】
 ```c
