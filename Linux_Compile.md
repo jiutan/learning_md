@@ -20,6 +20,9 @@
     g++ hello.cpp	// use g++ to compile cpp文件,生成 a.out可执行文件
     
     ./a.out		// 通过该命令，直接输出a.out文件
+        
+    // 【建议使用】！！！
+    g++ <文件名>.cpp -o <文件名> && ./<文件名>
 ```
 ## 2. 使用CMakeList.txt编译C++文件
 ```c
