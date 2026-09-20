@@ -20,7 +20,17 @@
 
 - **~（家目录）**：只是这栋大楼里的**某一个私人房间**（全名其实是 /home/jiutan）。
 
+### Linux 软连接（ln）
 
+- 目的：创建 桌面快捷方式
+
+- 操作：
+
+  ```shell
+  ln -s 软链接目标 ~/桌面/<目标文件夹名>
+  ```
+
+  
 
 ### Linux Shell
 
@@ -49,11 +59,14 @@
   - 开启：`setproxy`
   - 关闭：`unsetproxy`
 
-- 安装软件的写法：`-E`
+- 涉及到最高权限`sudo`时：务必加上`-E`，==`sudo -E`==
 
   ```bash
   # -E 参数代表“保留当前用户的环境变量与代理配置”
+  # sudo -E  
   sudo -E apt update
+  
+  sudo -E apt install ...
   ```
 
 - Git 代理：
@@ -62,6 +75,23 @@
   git config --global http.proxy http://127.0.0.1:7890
   git config --global https.proxy http://127.0.0.1:7890
   ```
+
+#### （2）查看 目录
+
+树状图列出
+
+- `tree` ：
+  - `-d`：只看文件夹
+  - `-L n`：最多只展开 n 层子目录（适合看大工程结构）
+
+搜索目录：
+
+- `find 文件名`：
+  - 文件名：`.`，找寻所有文件
+  - `-type d`：代表只查找目录
+  - `-maxdepth n`：只查找当前目录的下n级
+
+
 
 
 
@@ -132,7 +162,6 @@
 
    
 
-3. 
 
 ### Linux 云盘挂载
 
@@ -198,5 +227,40 @@
   // 4. 如果希望关掉终端/注销后也继续同步
   sudo loginctl enable-linger $USER    
   ```
+
+
+
+
+
+
+
+
+# Linux 拯救
+
+### 1. 问题1：鼠标可以移动，但无法点击 / 桌面卡顿 / 窗口掉帧 
+
+- 原因：**鼠标指针捕获**被后台偷走了
+
+- 解决方法：在 X11（Xorg）模式下
+
+  1. 按键盘上的**`Alt + F2`**组合键
+  2. 输入：**`r`**
+  3. 按 回车键Enter
+
+- 注： 若 `Alt + F2`无法呼出
+
+  - 按**`Ctrl + Alt + F3`** 切入文本控制台
+
+  - 输入用户名和密码
+
+  - 运行：
+
+    ```shell
+    sudo systemctl stop rustdesk && pkill -9 rustdesk
+    pkill -9 runsund
+    pkill -9 oraysl
+    ```
+
+  - 按 `Ctrl + ALt + F2` 切回桌面
 
   

@@ -73,9 +73,20 @@
 查找文件步骤：
 （1）通过环境变量：AMENT_PREFIX_PATH
 （2）查找：lib/package_name(功能包名)/exacuteable_name(可执行文件名)
-#### source：添加 环境变量
+#### source：添加 环境变量（ubuntu24.04）
+
+```shell
+source /opt/ros/jazzy/setup.bash
+```
+
+#### 查看话题：
+
+- 查看话题列表：`ros2 topic list`
+
+- 查看话题具体内容：`ros2 topic echo <话题名>`
 
 #### node list：查看 当前节点列表
+
 ```c
     ros2 node list		// 查看当前 正在运行 的节点
 ```

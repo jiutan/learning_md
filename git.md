@@ -52,11 +52,16 @@
    git remote -v
 
 ```
-### 8.推送至 远程仓库【后面只需要推送即可，前面的配置一次即可】
+### 8.推送至 远程仓库【后面只需要推送即可，前面的配置一次即可】(使用SSH推送)
 ```c
+// 将仓库地址从 https 改成 ssh
+git remote set-url origin git@github.com:jiutan/<文件夹>git
 
-    git push origin main       // 需要输入账户和密码时：账户用github的邮箱，密码用Personal Access Tocken
-
+// 首次推送 用 -u
+git push -u origin main
+    
+// 后面推送
+git push
 ```
 ## git常用代码（注：省略 [] ）
 ### 1. git常用代码
