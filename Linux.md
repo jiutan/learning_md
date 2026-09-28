@@ -175,62 +175,104 @@
 
 - 同步命令：在本地盘存入文件后，输入命令进行同步
 
-  ```
-  rclone bisync ~/文档/BaiduSync alist:/Baidu/Linux_BaiduSync --compare size -v
-  ```
-
+  ```shell
+  # 单向推送（不容易报错）
+  rclone copy ~/文档/BaiduSync/ alist:/Baidu/Linux_BaiduSync/ -P
+  ## -P 参数（Progress）超级实用：终端里会亲眼显示出实时上传进度条、上传速度（xx MB/s）和剩余时间
   
+  # 双向同步
+  rclone bisync ~/文档/BaiduSync/ alist:/Baidu/Linux_BaiduSync/ --compare size -v
+  ## 或者
+  systemctl --user start baidu-bisync.service
+  
+  # 设置快捷键传送
+  ## 快捷键
+  syncup
+  ## 如何设置（一次初始化即可）
+  echo "alias syncup='rclone copy ~/文档/BaiduSync/ alist:/Baidu/Linux_BaiduSync/ -P'" >> ~/.bashrc
+  source ~/.bashrc
+  ```
 
+- 若出现报错：`ERROR：Bisync aborted. Must run --resync to recover.`
+
+  ```shell
+  # 需要重新对账本
+  rclone bisync ~/文档/BaiduSync/ alist:/Baidu/Linux_BaiduSync/ --compare size -v --resync
+  ```
+  
 - 自动同步方法：（已实现）
 
-  ```c++
-  // 1. 创建 systemd 用户服务
+  ```shell
+  # 1. 创建 systemd 用户服务
   mkdir -p ~/.config/systemd/user
   mkdir -p ~/.cache
   
-  //// 创建服务文件：
+  ## 创建服务文件：
   nano ~/.config/systemd/user/baidu-bisync.service
   
-  //// 写入： 保存退出。   
+  ## 写入： 保存退出。   
   [Unit]
   Description=Baidu Netdisk bisync via rclone
+  ### 确保网络连接且 AList 启动后再执行同步
+  After=network-online.target default.target
+  Wants=network-online.target
   
   [Service]
   Type=oneshot
-  ExecStart=/usr/local/bin/rclone bisync %h/文档/BaiduSync alist:/Baidu/Linux_BaiduSync --compare size --log-file=%h/.cache/baidu-bisync.log --log-level INFO
+  ### 规范路径（末尾加斜杠）、使用正确的 rclone 路径、加上防重叠锁（防止正在编写的文件报错）
+  ExecStart=/usr/bin/flock -n /tmp/rclone_bisync.lock /usr/bin/rclone bisync %h/文档/BaiduSync/ alist:/Baidu/Linux_BaiduSync/ \
+      --compare size \
+      --exclude ".~lock.*" \
+      --exclude "~$*" \
+      --exclude "*.tmp" \
+      --exclude "*.swp" \
+      --exclude "*~" \
+      --log-file=%h/.cache/baidu-bisync.log \
+      --log-level INFO
   
-  // 2. 创建定时器
+  [Install]
+  WantedBy=default.target
+  
+  # 2. 创建定时器
   nano ~/.config/systemd/user/baidu-bisync.timer
       
-  //// 写入：
+  ## 写入：
   [Unit]
   Description=Run Baidu Netdisk bisync every 5 minutes
   
   [Timer]
-  OnBootSec=2min
+  ### 开机 3 分钟后再开始第一次同步（留足连校园网和起 AList 的时间）
+  OnBootSec=3min
+  ### 之后每 5 分钟跑一次
   OnUnitActiveSec=5min
   Persistent=true
   
   [Install]
   WantedBy=timers.target
       
-  // 3. 启用自动同步：每 5 分钟自动同步一次
+  # 3. 启用自动同步：每 5 分钟自动同步一次
   systemctl --user daemon-reload
   systemctl --user enable --now baidu-bisync.timer
       
-  //// 查看状态：
+  ## 查看状态：
   systemctl --user status baidu-bisync.timer    
   
-  //// 查看同步日志：
+  ## 查看同步日志：
   tail -f ~/.cache/baidu-bisync.log
       
-  // 4. 如果希望关掉终端/注销后也继续同步
+  # 4. 若要重启自动服务
+  ## 刷新 systemd 配置
+  systemctl --user daemon-reload
+  
+  ## 重新启动定时器
+  systemctl --user restart baidu-bisync.timer
+  
+  ## 查看定时器状态（看到 active (waiting) 说明已经完美待命了）
+  systemctl --user status baidu-bisync.timer
+      
+  # 4. 如果希望关掉终端/注销后也继续同步
   sudo loginctl enable-linger $USER    
   ```
-
-
-
-
 
 
 
@@ -263,4 +305,46 @@
 
   - 按 `Ctrl + ALt + F2` 切回桌面
 
-  
+
+
+
+### 2. 连不上校园网
+
+报错：
+
+
+
+解决方法：修改`@DLMU 1`的网络配置
+
+```shell 
+nmcli connection modify "@DLMU 1" \
+  802-11-wireless.cloned-mac-address permanent \
+  802-11-wireless.powersave 2 \
+  ipv4.method auto \
+  ipv4.ignore-auto-dns no \
+  ipv4.dns "" \
+  ipv6.method disabled
+
+nmcli radio wifi off
+sleep 3
+nmcli radio wifi on
+nmcli connection up "@DLMU 1"
+```
+
+解释：
+
+- `nmcli connection modify "@DLMU 1"`：修改名叫 @DLMU 1 的网络配置。
+
+- `cloned-mac-address permanent`：关闭随机 MAC，用电脑真实网卡地址连接。校园网经常会绑定设备，随机 MAC 会导致认证失效或反复掉线。
+- `powersave 2`：关闭 Wi‑Fi 省电模式，避免网卡为了省电导致延迟高、掉线、网速慢。
+- `ipv4.method auto`：IPv4 自动获取地址，也就是 DHCP
+- `ipv4.ignore-auto-dns no`：使用校园网自动下发的 DNS
+- `ipv4.dns ""`：清空你手动设置过的 DNS
+- `ipv6.method disabled`：关闭 IPv6。很多校园网 IPv6/DNS 配置不稳定时，会出现网页卡、DNS 报错、时有时无
+
+
+
+- `nmcli radio wifi off`：关闭 Wi‑Fi
+- `sleep 3`：等 3 秒
+- `nmcli radio wifi on`：重新打开 Wi‑Fi
+- `nmcli connection up "@DLMU 1"`：重新连接 `@DLMU 1`
